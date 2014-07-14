@@ -56,7 +56,6 @@ public class PstMessageParser {
             setMessageSize(message.getMessageSize());
             
             Map<String, Object> m = mapped();
-//            toJson(m);
             return m;
     }
 
@@ -76,12 +75,6 @@ public class PstMessageParser {
         mappedMessage.put("messageSize", messageSize);
         
         return mappedMessage;
-    }
-    
-    private String toJson(Map<String, Object> mappedMessage) {
-        JSONObject jsonText = new JSONObject(mappedMessage);
-//        System.out.print(jsonText);
-        return jsonText.toString();
     }
     
     public PSTMessage getMessage() {

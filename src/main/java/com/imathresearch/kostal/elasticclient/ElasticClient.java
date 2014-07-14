@@ -19,9 +19,9 @@
 
 package com.imathresearch.kostal.elasticclient;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import com.imathresearch.kostal.readers.PstReader;
+import com.pff.PSTFile;
+import com.pff.PSTFolder;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -30,58 +30,36 @@ import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
 import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.action.get.GetResponse;
-import org.elasticsearch.action.index.IndexRequestBuilder;
-import org.elasticsearch.action.index.IndexResponse;
-import org.elasticsearch.client.Client;
-import org.elasticsearch.common.xcontent.XContentFactory;
-import org.elasticsearch.node.Node;
-import org.elasticsearch.node.NodeBuilder;
+
 import org.json.JSONObject;
 
-import com.imathresearch.kostal.readers.PstReader;
-import com.pff.PSTFile;
-import com.pff.PSTFolder;
-
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class ElasticClient {
     
     private static PstReader reader;
-    private static Node node;
-    private static Client client;
     private static String urlBase = "http://localhost:8080/kostal/node";
     
-    public ElasticClient() {
-        System.out.println(">>> STARTING ELASTIC CLIENT <<<");
-    }
     
     public static void main (String[] args) throws ElasticsearchException, IOException
     {
         
-        node = NodeBuilder.nodeBuilder()
-                .clusterName("my_cluster")
-                .node();
-        
-        client = node.client();
-        
         Map<String, List<Map<String, Object>>> contentList = ElasticClient.getFolderContent();
-        String contentJson = ElasticClient.toJson(contentList.get("Principio de las Carpetas personales"));
-//        System.out.println(">>>" + contentJson);
         
         try {
-            for (Map<String, Object> map : contentList.get("Principio de las Carpetas personales")) {
-                sendPost("GPO", "pretty", new JSONObject(map).toString());
+            for (String folderName : contentList.keySet()) {
+                for (Map<String, Object> map : contentList.get(folderName)) {
+                    sendRequest("POST", "GPO", "pretty", new JSONObject(map).toString());
+                }
             }
             
-//            sendPost("GPO", "pretty", contentJson);
-            
         } catch (Exception e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
         
@@ -124,27 +102,15 @@ public class ElasticClient {
         return responseCode;
     }
     
-    private static void sendPost(String action, String urlParams, String payload) throws Exception {
+    public static void sendRequest(String method, String action, String urlParams, String payload) throws Exception {
 
         String urlApp = "/pst/" + action;
         String url = urlBase + urlApp + "?" + urlParams;
-        String method = "POST";
-        System.out.println(">>>" + url);
         
         int code = esConnection(method, new URL(url), payload);
     }
     
-    private static void sendGet() {
-        
-    }
-    
-    /*
-    private static void sendBulkData(String data) throws Exception {
-        String payload = "";
-        sendPost("GPO/_bulk", "", payload);
-    }*/ 
-    
-    private static void loadPstFileTest() {
+    private static void loadPstFiles() {
         try {
             reader = new PstReader("GPO.pst");
             
@@ -157,7 +123,7 @@ public class ElasticClient {
     }
     
     private static Map<String, List<Map<String, Object>>> getFolderContent() {
-        loadPstFileTest();
+        loadPstFiles();
         PSTFile pstFile = reader.getPstFile();
         assertNotNull(pstFile);
         
@@ -171,75 +137,5 @@ public class ElasticClient {
         }
         return null;
     }
-    
-    private static String toJson(List<Map<String, Object>> contentList) {//(Map<String, List<Map<String, Object>>> contentList) {
-        System.out.println(contentList.get(0));
-        System.out.println(contentList);
-//        JSONObject json = null;
-//        String jsonText = null;
-//        for (Map<String, Object> map : contentList) {
-//            json = new JSONObject(map);
-//            jsonText = jsonText +"\n"+ json.toString();
-//        }
-        
-        JSONObject jsonText = new JSONObject(contentList);
-        System.out.println(jsonText);
-        return jsonText.toString();
-    }
 }
 
-/*import org.elasticsearch.client.Client;
-import org.elasticsearch.node.Node;
-import org.elasticsearch.node.NodeBuilder;
-import org.elasticsearch.wares.NodeServlet;
-
-public class ElasticClient {
-    
-    private Node node;
-    private Client client;
-    
-    public ElasticClient() {
-        System.out.println(">>> STARTING ELASTIC CLIENT <<<");
-        startClient();
-    }
-    
-    protected void startClient() {
-        try {
-        System.out.println(">>> 1 <<<");
-        node = NodeBuilder.nodeBuilder()
-                .clusterName("my_elastic_client")
-                .node();
-        
-        System.out.println(">>> 2 <<<");
-        client = node.client();
-        System.out.println(">>> 3 <<<");
-        System.out.println(">>> STARTING ELASTIC CLIENT <<<" + client.toString());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-    
-    protected void stopClient() {
-        node.close();
-    }
-    
-    public Client getInstance() {
-        return client;
-    }
-
-    public Node getNode() {
-        return node;
-    }
-
-    public Client getClient() {
-        return client;
-    }
-
-    public void setNode(Node node) {
-        this.node = node;
-    }
-
-    public void setClient(Client client) {
-        this.client = client;
-    }
-} */

@@ -3,14 +3,12 @@ package com.imathresearch.kostal.readers;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Vector;
 
-import com.pff.PSTAttachment;
 import com.pff.PSTException;
 import com.pff.PSTFile;
 //import com.pff.PSTFolder;
@@ -39,7 +37,6 @@ public class PstReader {
         }
         Map<String, List<Map<String,Object>>> contentMap = new HashMap<String, List<Map<String,Object>>>();
         contentMap = getMessages(folder);
-//        System.out.println("--------------------------------------");
         
         // go through the folders...
         if (folder.hasSubfolders()) {
@@ -54,7 +51,6 @@ public class PstReader {
     public Map<String, List<Map<String, Object>>> getMessages(PSTFolder folder) throws PSTException, IOException {
      // and now the emails for this folder
         int numMessages = folder.getContentCount();
-//        System.out.println(">>> NUMBER OF MESS: " + numMessages);
         PstMessageParser parser = new PstMessageParser();
         Map<String, List<Map<String,Object>>> content = new HashMap<String, List<Map<String,Object>>>();
         List<Map<String,Object>> emailList = new ArrayList<Map<String,Object>>();
