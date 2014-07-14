@@ -4,6 +4,10 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Vector;
 
 import com.pff.PSTAttachment;
@@ -27,37 +31,46 @@ public class PstReader {
     }
     
      
-    public void getFolderContent(PSTFolder folder) throws PSTException,
+    public Map<String, List<Map<String,Object>>> getFolderContent(PSTFolder folder) throws PSTException,
             java.io.IOException {
         
-        System.out.println(folder.getDisplayName());
-        getMessages(folder);
-        System.out.println("--------------------------------------");
+        if ("".equals(folder.getDisplayName())) {
+            folder.getNextChild();
+        }
+        Map<String, List<Map<String,Object>>> contentMap = new HashMap<String, List<Map<String,Object>>>();
+        contentMap = getMessages(folder);
+//        System.out.println("--------------------------------------");
         
         // go through the folders...
         if (folder.hasSubfolders()) {
             Vector<PSTFolder> childFolders = folder.getSubFolders();
             for (PSTFolder childFolder : childFolders) {
-                getFolderContent(childFolder);
+                contentMap.putAll(getFolderContent(childFolder));
             }
         }
+        return contentMap;
     }
     
-    public void getMessages(PSTFolder folder) throws PSTException, IOException {
+    public Map<String, List<Map<String, Object>>> getMessages(PSTFolder folder) throws PSTException, IOException {
      // and now the emails for this folder
         int numMessages = folder.getContentCount();
-        System.out.println(">>> NUMBER OF MESS: " + numMessages);
+//        System.out.println(">>> NUMBER OF MESS: " + numMessages);
+        PstMessageParser parser = new PstMessageParser();
+        Map<String, List<Map<String,Object>>> content = new HashMap<String, List<Map<String,Object>>>();
+        List<Map<String,Object>> emailList = new ArrayList<Map<String,Object>>();
         for (int i = 0; i < numMessages; i++) {
             
             PSTObject emailObj = folder.getNextChild();
             PSTMessage email = (PSTMessage)emailObj;
-            PstMessageParser parser = new PstMessageParser();
+              
             if (email != null) {
                 parser.setMessage(email);
-                parser.parse();
+                emailList.add(parser.parse());
             }
             email = (PSTMessage)folder.getNextChild();
         }
+        content.put(folder.getDisplayName(), emailList);
+        return content;
     }
 
     /*
@@ -73,7 +86,7 @@ public class PstReader {
     }
 
     
-    protected File getFile() {
+    public File getFile() {
         return file;
     }
 
