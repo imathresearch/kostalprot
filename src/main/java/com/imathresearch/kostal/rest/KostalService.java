@@ -4,8 +4,12 @@ import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
+import com.imathresearch.kostal.elasticclient.ElasticClient;
 
 @Path("/")
 public class KostalService {
@@ -18,11 +22,19 @@ public class KostalService {
     
     @GET
     @Path("/messages")
+    @Produces({MediaType.APPLICATION_JSON})
     public Response getMessages(
             @QueryParam("grouped") @DefaultValue("false") boolean grouped
             ) {
-        String response = "Hello World";
-        return Response.status(200).entity(response).build();
+        
+        Response resp = null;
+        try {
+            resp = ElasticClient.sendRequest("GET", "_search", "pretty=true&q=*", null);
+        } catch (Exception e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return resp;
     }
     
     @GET
@@ -31,15 +43,29 @@ public class KostalService {
             @PathParam("id") String id,
             @QueryParam("grouped") @DefaultValue("false") boolean grouped
             ) {
-        return null;
+        Response resp = null;
+        try {
+            resp = ElasticClient.sendRequest("GET", "GPO/" + id, "pretty", null);
+        } catch (Exception e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return resp;
     }
 
     
     @GET
     @Path("/search")
     public Response search(
-            @PathParam("eSearchQuery") String query
+            @QueryParam("q") String query
             ) {
-        return null;
+        Response resp = null;
+        try {
+            resp = ElasticClient.sendRequest("GET", "_search", "pretty=true&q=" + query, null);
+        } catch (Exception e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return resp;
     }
 }

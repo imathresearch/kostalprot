@@ -33,8 +33,12 @@ import java.net.URL;
 import java.util.List;
 import java.util.Map;
 
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.ResponseBuilder;
+
 import org.elasticsearch.ElasticsearchException;
 
+import org.jboss.resteasy.specimpl.ResponseBuilderImpl;
 import org.json.JSONObject;
 
 import static org.junit.Assert.assertNotNull;
@@ -65,7 +69,7 @@ public class ElasticClient {
         
     }
     
-    private static int esConnection(String method, URL urlObj, String payload) throws IOException, URISyntaxException {
+    private static Response esConnection(String method, URL urlObj, String payload) throws IOException, URISyntaxException {
         
         HttpURLConnection con = (HttpURLConnection) urlObj.openConnection();
         
@@ -75,15 +79,16 @@ public class ElasticClient {
         con.setRequestProperty("Content-Type", "application/json");
         con.setRequestProperty("Accept", "application/json");
         
-        OutputStreamWriter osw = new OutputStreamWriter(con.getOutputStream());
-        osw.write(payload);
-        osw.flush();
-        osw.close();
+        if (payload != null) {
+            OutputStreamWriter osw = new OutputStreamWriter(con.getOutputStream());
+            osw.write(payload);
+            osw.flush();
+            osw.close();
+        }
         
-        int responseCode = con.getResponseCode();
         System.out.println("\nSending request to URL : " + urlObj.toURI().toString());
         System.out.println("ContentMethod : " + con.getRequestMethod());
-        System.out.println("Response Code : " + responseCode);
+        System.out.println("Response Code : " + con.getResponseCode());
         System.out.println("payload : " + payload);
         System.out.println("Content : " + con.getResponseMessage());
         
@@ -96,18 +101,23 @@ public class ElasticClient {
         }
         in.close();
 
+        /*
         //print result
-        System.out.println("Response : " + response.toString());
+        System.out.println("Response : " + response.toString());*/
         
-        return responseCode;
+        return Response
+                .status(con.getResponseCode())
+                .entity(response)
+                .build();
     }
     
-    public static void sendRequest(String method, String action, String urlParams, String payload) throws Exception {
+    public static Response sendRequest(String method, String action, String urlParams, String payload) throws Exception {
 
         String urlApp = "/pst/" + action;
         String url = urlBase + urlApp + "?" + urlParams;
         
-        int code = esConnection(method, new URL(url), payload);
+        return esConnection(method, new URL(url), payload);
+        
     }
     
     private static void loadPstFiles() {
