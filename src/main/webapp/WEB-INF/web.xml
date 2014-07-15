@@ -10,10 +10,6 @@
 		<welcome-file>default.jsp</welcome-file>
 	</welcome-file-list>
 	
-	<!-- <listener>
-        <listener-class>com.imathresearch.kostal.servlet.EsContextListener</listener-class>
-    </listener>  -->
-    
     <servlet>
         <servlet-name>node</servlet-name>
         <servlet-class>org.elasticsearch.wares.NodeServlet</servlet-class>
@@ -24,4 +20,5 @@
         <servlet-name>node</servlet-name>
         <url-pattern>/node/*</url-pattern>
     </servlet-mapping>
+    
 </web-app>
