@@ -45,7 +45,7 @@ public class KostalService {
             ) {
         Response resp = null;
         try {
-            resp = ElasticClient.sendRequest("GET", "GPO/" + id, "pretty", null);
+            resp = ElasticClient.sendRequest("GET", "Obra/" + id, "pretty", null);
         } catch (Exception e) {
             // TODO Auto-generated catch block
             e.printStackTrace();

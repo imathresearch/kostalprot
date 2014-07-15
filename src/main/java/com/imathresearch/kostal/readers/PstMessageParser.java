@@ -1,14 +1,12 @@
 package com.imathresearch.kostal.readers;
 
 import java.io.IOException;
-import java.io.StringWriter;
 import java.text.DecimalFormat;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.Map;
-
-import org.json.JSONObject;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import com.pff.PSTAttachment;
 import com.pff.PSTException;
@@ -18,6 +16,7 @@ public class PstMessageParser {
 
     private static PSTMessage message;
     private static DecimalFormat twoDForm = new DecimalFormat("#.##");
+    private static String emptyField = "EMPTY";
     
     String internetMessageId;
     String subject;
@@ -30,6 +29,10 @@ public class PstMessageParser {
     Long attachmentSize;
     Long messageSize;
     
+    String conversationTopic;
+    String transportMessageHeaders;
+    String threadIndex;
+    String threadTopic;
     
     public PstMessageParser() {}
     
@@ -54,6 +57,16 @@ public class PstMessageParser {
             setBody(message.getBody());
             setAttachmentSize(sizeAtt);
             setMessageSize(message.getMessageSize());
+
+            setConversationTopic(message.getConversationTopic());
+            setTransportMessageHeaders(message.getTransportMessageHeaders());
+            if (transportMessageHeaders == null || "".equals(transportMessageHeaders)) {
+                threadIndex = emptyField;
+                threadTopic = emptyField;
+            } else {
+                threadIndex = extractHeaderValue("Thread-Index", transportMessageHeaders);
+                threadTopic = extractHeaderValue("Thread-Topic", transportMessageHeaders);
+            }
             
             Map<String, Object> m = mapped();
             return m;
@@ -73,6 +86,11 @@ public class PstMessageParser {
         mappedMessage.put("body", body);
         mappedMessage.put("attachmentSize", attachmentSize);
         mappedMessage.put("messageSize", messageSize);
+        
+        mappedMessage.put("conversationTopic", conversationTopic);
+        mappedMessage.put("transportMessageHeaders", transportMessageHeaders);
+        mappedMessage.put("threadIndex", threadIndex);
+        mappedMessage.put("threadTopic", threadTopic);
         
         return mappedMessage;
     }
@@ -181,6 +199,46 @@ public class PstMessageParser {
     public void setBody(String body) {
         this.body = body;
     }
+
+    public String getConversationTopic() {
+        return conversationTopic;
+    }
+
+    public void setConversationTopic(String conversationTopic) {
+        this.conversationTopic = conversationTopic;
+    }
+
+    public String getTransportMessageHeaders() {
+        return transportMessageHeaders;
+    }
+
+    public void setTransportMessageHeaders(String transportMessageHeaders) {
+        this.transportMessageHeaders = transportMessageHeaders;
+    }
     
+    public String getThreadIndex() {
+        return threadIndex;
+    }
+
+    public String getThreadTopic() {
+        return threadTopic;
+    }
+
+    public void setThreadIndex(String threadIndex) {
+        this.threadIndex = threadIndex;
+    }
+
+    public void setThreadTopic(String threadTopic) {
+        this.threadTopic = threadTopic;
+    }
     
+    private String extractHeaderValue(String header, String headers) {
+        Pattern p = Pattern.compile("\\n" + header + ": ([^\\n\\r]*)", Pattern.CASE_INSENSITIVE);
+        Matcher m = p.matcher(headers);
+        if (m.find()) {
+            return m.group(1);
+        }
+        return emptyField;
+    }
+
 }

@@ -22,7 +22,7 @@ public class PstReaderTest {
 
     public void loadPstFileTest() {
         try {
-            reader = new PstReader("GPO.pst");
+            reader = new PstReader("Obra.pst");
             
             assertTrue(reader.getFile().exists());
             assertNotNull(reader.getPstFile());

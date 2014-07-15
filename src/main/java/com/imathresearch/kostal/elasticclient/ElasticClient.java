@@ -34,11 +34,10 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.ResponseBuilder;
 
+//import org.apache.log4j.Logger;
 import org.elasticsearch.ElasticsearchException;
 
-import org.jboss.resteasy.specimpl.ResponseBuilderImpl;
 import org.json.JSONObject;
 
 import static org.junit.Assert.assertNotNull;
@@ -46,6 +45,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class ElasticClient {
+//    private static Logger logger = Logger.getLogger(ElasticClient.class);
     
     private static PstReader reader;
     private static String urlBase = "http://localhost:8080/kostal/node";
@@ -59,7 +59,7 @@ public class ElasticClient {
         try {
             for (String folderName : contentList.keySet()) {
                 for (Map<String, Object> map : contentList.get(folderName)) {
-                    sendRequest("POST", "GPO", "pretty", new JSONObject(map).toString());
+                    sendRequest("POST", "Obra", "pretty", new JSONObject(map).toString());
                 }
             }
             
@@ -77,7 +77,9 @@ public class ElasticClient {
         con.setDoOutput(true);
         con.setRequestMethod(method);
         con.setRequestProperty("Content-Type", "application/json");
+        con.setRequestProperty("Content-Type", "application/x-www-form-urlencoded; charset=utf-8");
         con.setRequestProperty("Accept", "application/json");
+        con.setRequestProperty("Accept-charset", "UTF-8");
         
         if (payload != null) {
             OutputStreamWriter osw = new OutputStreamWriter(con.getOutputStream());
@@ -86,11 +88,11 @@ public class ElasticClient {
             osw.close();
         }
         
-        System.out.println("\nSending request to URL : " + urlObj.toURI().toString());
-        System.out.println("ContentMethod : " + con.getRequestMethod());
-        System.out.println("Response Code : " + con.getResponseCode());
-        System.out.println("payload : " + payload);
-        System.out.println("Content : " + con.getResponseMessage());
+//        logger.info("Sending request to URL : " + urlObj.toURI().toString());
+//        logger.info("ContentMethod : " + con.getRequestMethod());
+//        logger.info("Response Code : " + con.getResponseCode());
+//        logger.info("payload : " + payload);
+//        logger.info("Content : " + con.getResponseMessage());
         
         BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
         String inputLine;
@@ -101,10 +103,6 @@ public class ElasticClient {
         }
         in.close();
 
-        /*
-        //print result
-        System.out.println("Response : " + response.toString());*/
-        
         return Response
                 .status(con.getResponseCode())
                 .entity(response)
@@ -122,7 +120,7 @@ public class ElasticClient {
     
     private static void loadPstFiles() {
         try {
-            reader = new PstReader("GPO.pst");
+            reader = new PstReader("Obra.pst");
             
             assertTrue(reader.getFile().exists());
             assertNotNull(reader.getPstFile());

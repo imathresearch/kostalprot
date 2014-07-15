@@ -1,5 +1,5 @@
 .classpath
 .project
 .settings/
-src/main/resources/PSTs/GPO.pst
+src/main/resources/PSTs/*.pst
 /target
