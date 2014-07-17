@@ -1,6 +1,6 @@
 package com.imathresearch.kostal.rest;
 
-import java.io.OutputStream;
+import java.util.List;
 
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
@@ -11,18 +11,10 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import org.elasticsearch.common.lucene.search.XBooleanFilter;
-import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.elasticsearch.common.xcontent.XContentBuilderString;
-import org.elasticsearch.common.xcontent.XContentFactory;
-import org.elasticsearch.common.xcontent.XContentString;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import com.imathresearch.kostal.elasticclient.ElasticClient;
-import com.imathresearch.kostal.readers.PstMessageParser;
-
-import static com.imathresearch.kostal.readers.PstMessageParser.emptyField;
 
 @Path("/")
 public class KostalService {
@@ -75,28 +67,13 @@ public class KostalService {
                     "",
                     null);
             
-            System.out.println(">>>" + threaded);
-            
             if (threaded) {
-                // TODO rewrite json to threaded show.
-               
-                XContentBuilderString entity = new XContentBuilderString(resp.getEntity().toString());
-                JSONObject jsonEntity = new JSONObject(entity.camelCase().getValue());
-                JSONObject jsonSource = jsonEntity.getJSONObject("Source");
-                
-                String threadIndex = jsonSource.getString("threadIndex");
-                
-                String topic = null;
-                if (emptyField.equals(jsonSource.getString("threadTopic"))) {
-                    topic = jsonSource.getString("conversationTopic");
-                } else {
-                    topic = jsonSource.getString("threadTopic");
-                }
-                
-                JSONArray xx =ElasticClient.retrieveThread(threadIndex, topic);
+
+                JSONObject json = new JSONObject(resp.getEntity().toString());
+                JSONArray jsonThreaded = ElasticClient.retrieveResultsThreaded(json);
                 resp = Response
                         .status(resp.getStatus())
-                        .entity(xx.toString())
+                        .entity(jsonThreaded.toString())
                         .build();
             }
         } catch (Exception e) {
@@ -107,17 +84,27 @@ public class KostalService {
         return resp;
     }
 
-    
     @GET
     @Path("/search")
     public Response searchAll(
-            @QueryParam("q") String query
+            @QueryParam("q") @DefaultValue("*") String query,
+            @QueryParam("threaded") @DefaultValue("true") boolean threaded
             ) {
         
         Response resp = null;
         try {
             String payload = ElasticClient.searchPayload(query);
             resp = ElasticClient.sendRequest("GET", "_search", "" , payload);
+            
+            JSONObject jsonEntity = new JSONObject(resp.getEntity().toString());
+            JSONArray jsonArray = jsonEntity.getJSONObject("hits").getJSONArray("hits");
+            if (threaded) {
+                List<JSONArray> jsonThreadedList = ElasticClient.retrieveResultsThreaded(jsonArray);
+                resp = Response
+                        .status(resp.getStatus())
+                        .entity(jsonThreadedList.toString())
+                        .build();
+            }
         } catch (Exception e) {
             // TODO Auto-generated catch block
             e.printStackTrace();

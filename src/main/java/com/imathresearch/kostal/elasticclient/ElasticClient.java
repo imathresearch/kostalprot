@@ -22,7 +22,6 @@ package com.imathresearch.kostal.elasticclient;
 import com.imathresearch.kostal.readers.PstReader;
 import com.pff.PSTFile;
 import com.pff.PSTFolder;
-import com.pff.PSTMessage;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -32,6 +31,7 @@ import java.net.HttpURLConnection;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -46,7 +46,6 @@ import javax.ws.rs.core.Response;
 
 //import org.apache.log4j.Logger;
 import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.common.xcontent.XContentBuilderString;
 import org.elasticsearch.common.xcontent.XContentFactory;
 
 import org.json.JSONArray;
@@ -152,8 +151,7 @@ public class ElasticClient {
 
         Response resp = sendRequest("GET", "_search", "", payload);
         
-        XContentBuilderString entity = new XContentBuilderString(resp.getEntity().toString());
-        JSONObject jsonEntity = new JSONObject(entity.camelCase().getValue());
+        JSONObject jsonEntity = new JSONObject(resp.getEntity().toString());
         
         jsonArray = jsonEntity.getJSONObject("hits").getJSONArray("hits");
         jsonArray = sortDateJsonArray(jsonArray, "clientSubmitTime", "asc");
@@ -168,7 +166,7 @@ public class ElasticClient {
         
         for (int i = 0; i < jsonArray.length(); i++) {
             JSONObject json = new JSONObject(jsonArray.get(i).toString());
-            JSONObject jsonSource = json.getJSONObject("Source");
+            JSONObject jsonSource = json.getJSONObject("_source");
             Date date = new Date();
             try {
                 SimpleDateFormat dateFormat = new SimpleDateFormat("EEE MMM d HH:mm:ss z yyyy");
@@ -176,8 +174,9 @@ public class ElasticClient {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            dateMap.put(json.get("Id").toString(), date);
-            jsonMap.put(json.get("Id").toString(), new JSONObject("{\"Source\":" + jsonSource.toString() + "}"));
+            dateMap.put(json.get("_id").toString(), date);
+//            jsonMap.put(json.get("_id").toString(), new JSONObject("{\"_source\":" + jsonSource.toString() + "}"));
+            jsonMap.put(json.get("_id").toString(),json.put("_source", jsonSource));
         }
         dateMap = sortByComparator(dateMap);
         for (String key : dateMap.keySet()) {
@@ -269,6 +268,59 @@ public class ElasticClient {
             fail(e.getMessage());
         }
         return null;
+    }
+    
+    public static List<JSONArray> retrieveResultsThreaded(JSONArray json) throws Exception {
+        List<JSONArray> jsonThreadedList = new ArrayList<JSONArray>();
+        List<String> alreadyRetrievedIds = new ArrayList<String>(); 
+        for (int i = 0; i < json.length(); i++) {
+            JSONArray jsonArray = retrieveResultsThreaded(json.getJSONObject(i));
+            List<String> notUsedIds = notUsedIds(jsonArray, alreadyRetrievedIds);
+            
+            JSONArray filteredArray = new JSONArray();
+            for (int j = 0; j < jsonArray.length(); j++) {
+                JSONObject js = jsonArray.getJSONObject(j);
+                for (String id : notUsedIds) {
+                    if (id.equals(js.get("_id"))) {
+                        filteredArray.put(js);
+                    }
+                }
+            }
+            if (!"[]".equals(filteredArray.toString()))
+                jsonThreadedList.add(filteredArray);
+            alreadyRetrievedIds.addAll(notUsedIds);
+            System.out.println("_IDS>>>" + alreadyRetrievedIds);
+        }
+        return jsonThreadedList;
+    }
+    
+    private static List<String> notUsedIds(JSONArray jsonArray, List<String> alreadyRetrievedIds) {
+        List<String> notUsedIds = new ArrayList<String>();
+        for (int i = 0; i < jsonArray.length(); i++) {
+            JSONObject json = jsonArray.getJSONObject(i);
+            if(!alreadyRetrievedIds.contains(json.getString("_id"))) {
+                notUsedIds.add(json.getString("_id"));
+            }
+        }
+        
+        return notUsedIds;
+    }
+
+    public static JSONArray retrieveResultsThreaded(JSONObject json) throws Exception {
+        JSONObject jsonEntity = new JSONObject(json.toString());
+ 
+        JSONObject jsonSource = jsonEntity.getJSONObject("_source");//("Source");
+        String threadIndex = jsonSource.getString("threadIndex");
+        
+        String topic = null;
+        if (emptyField.equals(jsonSource.getString("threadTopic"))) {
+            topic = jsonSource.getString("conversationTopic");
+        } else {
+            topic = jsonSource.getString("threadTopic");
+        }
+        
+        JSONArray jsonThreaded = retrieveThread(threadIndex, topic);
+        return jsonThreaded;
     }
     
 }
