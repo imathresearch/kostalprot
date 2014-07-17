@@ -22,6 +22,7 @@ package com.imathresearch.kostal.elasticclient;
 import com.imathresearch.kostal.readers.PstReader;
 import com.pff.PSTFile;
 import com.pff.PSTFolder;
+import com.pff.PSTMessage;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -30,6 +31,14 @@ import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.text.SimpleDateFormat;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -37,9 +46,13 @@ import javax.ws.rs.core.Response;
 
 //import org.apache.log4j.Logger;
 import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.common.xcontent.XContentBuilderString;
+import org.elasticsearch.common.xcontent.XContentFactory;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
+import static com.imathresearch.kostal.readers.PstMessageParser.emptyField;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -118,6 +131,112 @@ public class ElasticClient {
         
     }
     
+    public static JSONArray retrieveThread(String threadIndex, String topic) throws Exception {
+        
+        JSONArray jsonArray = new JSONArray();
+        String query = "";
+        String payload = "";
+        if (emptyField.equals(threadIndex)) {
+            query = "threadTopic:\"" + topic + "\" OR conversationTopic:\"" + topic + "\"";
+            payload = searchPayload(query);
+        } else {
+            query = "threadIndex:" + threadIndex.substring(0, 15) + "*";
+            payload = searchPayload(query);
+        }
+
+        Response resp = sendRequest("GET", "_search", "", payload);
+        
+        XContentBuilderString entity = new XContentBuilderString(resp.getEntity().toString());
+        JSONObject jsonEntity = new JSONObject(entity.camelCase().getValue());
+        
+        jsonArray = jsonEntity.getJSONObject("hits").getJSONArray("hits");
+        jsonArray = sortDateJsonArray(jsonArray, "clientSubmitTime", "asc");
+        return jsonArray;
+    }
+    
+    private static JSONArray sortDateJsonArray(JSONArray jsonArray, String field, String order) {
+        Map<String, Date> dateMap = new HashMap<String, Date>();
+        Map<String, JSONObject> jsonMap = new HashMap<String, JSONObject>();
+        
+        JSONArray jsonArrayOrdered = new JSONArray();
+        
+        for (int i = 0; i < jsonArray.length(); i++) {
+            JSONObject json = new JSONObject(jsonArray.get(i).toString());
+            JSONObject jsonSource = json.getJSONObject("Source");
+            Date date = new Date();
+            try {
+                SimpleDateFormat dateFormat = new SimpleDateFormat("EEE MMM d HH:mm:ss z yyyy");
+                date = dateFormat.parse(jsonSource.get(field).toString());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            dateMap.put(json.get("Id").toString(), date);
+            jsonMap.put(json.get("Id").toString(), new JSONObject("{\"Source\":" + jsonSource.toString() + "}"));
+        }
+        dateMap = sortByComparator(dateMap);
+        for (String key : dateMap.keySet()) {
+            jsonArrayOrdered.put(jsonMap.get(key));
+        }
+        
+        return jsonArrayOrdered;
+    }
+    
+    public static String searchPayload(String query) {
+        String sortQuery = "";
+        String contentQuery = "";
+        String payload = "";
+        try {
+            sortQuery = XContentFactory.jsonBuilder()
+                    .startObject()
+                    .startObject("clientSubmitTime")
+                    .field("order", "asc")
+                    .endObject()
+                    .endObject()
+                    .string();
+            
+          contentQuery = XContentFactory.jsonBuilder()
+                      .startObject()
+                              .startObject("query_string")
+                                  .field("query", query)
+                              .endObject()
+                      .endObject()
+                      .string();
+            
+          JSONObject payload2 = new JSONObject();
+          //payload2.put("sort", new JSONObject(sortQuery));
+          payload2.put("query", new JSONObject(contentQuery));
+          payload = payload2.toString();
+          
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        
+        return payload;
+    }
+    
+    private static Map sortByComparator(Map unsortMap) {
+        
+        List list = new LinkedList(unsortMap.entrySet());
+
+        // sort list based on comparator
+        Collections.sort(list, new Comparator() {
+                public int compare(Object o1, Object o2) {
+                        return ((Comparable) ((Map.Entry) (o1)).getValue())
+                               .compareTo(((Map.Entry) (o2)).getValue());
+                }
+        });
+
+        // put sorted list into map again
+        //LinkedHashMap make sure order in which keys were inserted
+        Map sortedMap = new LinkedHashMap();
+        for (Iterator it = list.iterator(); it.hasNext();) {
+                Map.Entry entry = (Map.Entry) it.next();
+                sortedMap.put(entry.getKey(), entry.getValue());
+        }
+        return sortedMap;
+    }
+    
     private static void loadPstFiles() {
         try {
             reader = new PstReader("Obra.pst");
@@ -145,5 +264,6 @@ public class ElasticClient {
         }
         return null;
     }
+    
 }
 

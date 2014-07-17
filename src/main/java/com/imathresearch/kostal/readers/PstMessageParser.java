@@ -16,7 +16,7 @@ public class PstMessageParser {
 
     private static PSTMessage message;
     private static DecimalFormat twoDForm = new DecimalFormat("#.##");
-    private static String emptyField = "EMPTY";
+    public static String emptyField = "EMPTY";
     
     String internetMessageId;
     String subject;
@@ -68,12 +68,12 @@ public class PstMessageParser {
                 threadTopic = extractHeaderValue("Thread-Topic", transportMessageHeaders);
             }
             
-            Map<String, Object> m = mapped();
+            Map<String, Object> m = toMap();
             return m;
     }
 
     
-    public Map<String, Object> mapped() {
+    private Map<String, Object> toMap() {
         Map<String, Object> mappedMessage = new HashMap<String, Object>();
         
         mappedMessage.put("internetMessageId", internetMessageId);
