@@ -62,6 +62,8 @@ public class ElasticClient {
     
     private static PstReader reader;
     private static String urlBase = "http://localhost:8080/kostal/node";
+    private static String username = "kostal";
+    private static String password = ".k0st4l!Pr0t";
     
     
     public static void main (String[] args) throws ElasticsearchException, IOException
@@ -93,6 +95,10 @@ public class ElasticClient {
         con.setRequestProperty("Content-Type", "application/x-www-form-urlencoded; charset=utf-8");
         con.setRequestProperty("Accept", "application/json");
         con.setRequestProperty("Accept-charset", "UTF-8");
+
+        String userPassword = username + ":" + password;
+        String encoding = new sun.misc.BASE64Encoder().encode(userPassword.getBytes());
+        con.setRequestProperty("Authorization", "Basic " + encoding);
         
         if (payload != null) {
             OutputStreamWriter osw = new OutputStreamWriter(con.getOutputStream());

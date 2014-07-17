@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<web-app id="WebApp_ID" version="2.4" xmlns="http://java.sun.com/xml/ns/j2ee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee http://java.sun.com/xml/ns/j2ee/web-app_2_4.xsd">
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:javaee="http://xmlns.jcp.org/xml/ns/javaee" xmlns:web="http://xmlns.jcp.org/xml/ns/javaee" xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd">
 	<display-name>KOSTAL.email-analyser - kostal-email-analyser</display-name>
 	<welcome-file-list>
 		<welcome-file>index.html</welcome-file>
@@ -20,5 +20,23 @@
         <servlet-name>node</servlet-name>
         <url-pattern>/node/*</url-pattern>
     </servlet-mapping>
+    
+     <javaee:security-constraint>
+		<javaee:web-resource-collection>
+			<javaee:web-resource-name>All resources</javaee:web-resource-name>
+			<javaee:description>Protects all resources</javaee:description>
+			<javaee:url-pattern>/*</javaee:url-pattern>
+		</javaee:web-resource-collection>
+		<javaee:auth-constraint>
+			<javaee:role-name>WebAppUser</javaee:role-name>
+		</javaee:auth-constraint>
+    </javaee:security-constraint>
+	<javaee:security-role>
+		<javaee:role-name>WebAppUser</javaee:role-name>
+	</javaee:security-role>
+	<javaee:login-config>
+		<javaee:auth-method>BASIC</javaee:auth-method>
+		<javaee:realm-name>ApplicationRealm</javaee:realm-name>
+	</javaee:login-config>
     
 </web-app>
