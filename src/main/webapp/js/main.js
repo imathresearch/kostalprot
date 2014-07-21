@@ -1,4 +1,4 @@
-var result;
+//var result;
 function doSearch() {
 	
 	pst = $('#pst').val();
@@ -20,6 +20,25 @@ function doSearch() {
 		}
 			
 		$('#results').html(xx.toString());
+	});
+	
+	return true;
+};
+
+
+function createPstSelector() {
+	url = '/kostal/rest/mapping';
+	$.getJSON(url, function(data) {
+		selector = data;
+		
+		xx = [];
+//		console.log(Object.keys(result[0][0]['_source']));
+		xx.push('<option value="all" selected="selected">-- All --</option>');
+		for(var i=0; i<selector.length; i++){
+			xx.push('<option value="' + selector[i] + '">' + selector[i] + '</option>');
+		}
+			
+		$('#pst').html(xx.toString());
 	});
 	
 	return true;

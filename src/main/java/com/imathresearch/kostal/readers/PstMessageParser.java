@@ -21,14 +21,22 @@ public class PstMessageParser {
     String internetMessageId;
     String subject;
     Date clientSubmitTime;
+    
     String displayName;
     String displayTo;
     String displayCC;
-    String inReplyToId;
+    String displayBCC;
+    
+    String emailAddress;
+    String originalDisplayTo;
+    String originalDisplayCc;
+    String originalDisplayBcc;
+    
     String body;
     Long attachmentSize;
     Long messageSize;
     
+    String inReplyToId;
     String conversationTopic;
     String transportMessageHeaders;
     String threadIndex;
@@ -52,7 +60,13 @@ public class PstMessageParser {
             setDisplayName(message.getDisplayName());
             setDisplayTo(message.getDisplayTo());
             setDisplayCC(message.getDisplayCC());
+            setDisplayBCC(message.getDisplayBCC());
             setInReplyToId(message.getInReplyToId());
+            
+            setEmailAddress(message.getEmailAddress());
+            setOriginalDisplayTo(message.getOriginalDisplayTo());
+            setOriginalDisplayCc(message.getOriginalDisplayCc());
+            setOriginalDisplayBcc(message.getOriginalDisplayBcc());
 
             setBody(message.getBody());
             setAttachmentSize(sizeAtt);
@@ -79,14 +93,22 @@ public class PstMessageParser {
         mappedMessage.put("internetMessageId", internetMessageId);
         mappedMessage.put("subject", subject);
         mappedMessage.put("clientSubmitTime",clientSubmitTime);
+
         mappedMessage.put("displayName", displayName);
         mappedMessage.put("displayTo",displayTo);
         mappedMessage.put("displayCC", displayCC);
-        mappedMessage.put("inReplyToId", inReplyToId);
+        mappedMessage.put("displayBCC", displayBCC);
+        
+        mappedMessage.put("emailAddress", emailAddress);
+        mappedMessage.put("originalDisplayTo", originalDisplayTo);
+        mappedMessage.put("originalDisplayCc", originalDisplayCc);
+        mappedMessage.put("originalDisplayBcc", originalDisplayBcc);
+        
         mappedMessage.put("body", body);
         mappedMessage.put("attachmentSize", attachmentSize);
         mappedMessage.put("messageSize", messageSize);
         
+        mappedMessage.put("inReplyToId", inReplyToId);
         mappedMessage.put("conversationTopic", conversationTopic);
         mappedMessage.put("transportMessageHeaders", transportMessageHeaders);
         mappedMessage.put("threadIndex", threadIndex);
@@ -239,6 +261,61 @@ public class PstMessageParser {
             return m.group(1);
         }
         return emptyField;
+    }
+
+
+    public String getDisplayBCC() {
+        return displayBCC;
+    }
+
+
+    public String getEmailAddress() {
+        return emailAddress;
+    }
+
+
+    public String getOriginalDisplayBcc() {
+        return originalDisplayBcc;
+    }
+
+
+    public String getOriginalDisplayCc() {
+        return originalDisplayCc;
+    }
+
+
+    public String getOriginalDisplayTo() {
+        return originalDisplayTo;
+    }
+
+
+    public void setMessageSize(Long messageSize) {
+        this.messageSize = messageSize;
+    }
+
+
+    public void setDisplayBCC(String displayBCC) {
+        this.displayBCC = displayBCC;
+    }
+
+
+    public void setEmailAddress(String emailAddress) {
+        this.emailAddress = emailAddress;
+    }
+
+
+    public void setOriginalDisplayBcc(String originalDisplayBcc) {
+        this.originalDisplayBcc = originalDisplayBcc;
+    }
+
+
+    public void setOriginalDisplayCc(String originalDisplayCc) {
+        this.originalDisplayCc = originalDisplayCc;
+    }
+
+
+    public void setOriginalDisplayTo(String originalDisplayTo) {
+        this.originalDisplayTo = originalDisplayTo;
     }
 
 }

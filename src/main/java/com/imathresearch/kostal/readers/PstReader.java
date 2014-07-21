@@ -19,7 +19,7 @@ import com.pff.PSTObject;
 public class PstReader {
     
     private static String basePath =  System.getProperty("RESOURCE_PATH", "target/classes");
-    private static String pathName = basePath + "/PSTs";
+    public static String pathName = basePath + "/PSTs";
     private static File file;
     private PSTFile pstFile;
 

@@ -117,9 +117,41 @@ public class KostalService {
     @Path("/search/{pst}")
     public Response searchPst(
             @PathParam("pst") String pst,
-            @QueryParam("q") String query
+            @QueryParam("q") @DefaultValue("*") String query,
+            @QueryParam("threaded") @DefaultValue("true") boolean threaded
             ) {
-        return null;
+
+        Response resp = null;
+        try {
+            String payload = ElasticClient.searchPayload(query);
+            resp = ElasticClient.sendRequest("GET", pst + "/_search", "" , payload);
+            
+            JSONObject jsonEntity = new JSONObject(resp.getEntity().toString());
+            JSONArray jsonArray = jsonEntity.getJSONObject("hits").getJSONArray("hits");
+            if (threaded) {
+                List<JSONArray> jsonThreadedList = ElasticClient.retrieveResultsThreaded(jsonArray);
+                resp = Response
+                        .status(resp.getStatus())
+                        .entity(jsonThreadedList.toString())
+                        .build();
+            }
+        } catch (Exception e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        
+        return resp;
+    }
+    
+    @GET
+    @Path("/mapping")
+    public Response mapping() {
+        List<String> typeList = ElasticClient.esIndexMappings();
+        JSONArray typeJson = new JSONArray(typeList.toString());
+        return Response
+                .status(Response.Status.OK)
+                .entity(typeJson.toString())
+                .build();
     }
     
 }

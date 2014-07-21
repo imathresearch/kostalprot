@@ -4,7 +4,7 @@
 <title>KOSTAL, email analyser prototype</title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <link href="css/main.css" rel="stylesheet" />
-<script src="http://code.jquery.com/jquery-1.8.0.min.js" async="async"></script>
+<script src="http://code.jquery.com/jquery-1.8.0.min.js"></script>
 <script src="js/main.js" type="text/javascript"></script>
 </head>
 <body>
@@ -17,9 +17,6 @@
             <!-- <label for="pst" >PST: </label> -->
             <span style="width:140px;">PST: </span>
             <select id="pst" name="pst">
-			  <option value="all" selected="selected">-- All --</option>
-			  <option value="GPO">GPO</option>
-			  <option value="Obra">Obra</option>
 			</select> 
             <br/>
             <!-- <label for="query" >Query: </label> -->
@@ -48,6 +45,12 @@
         <div id="results"></div>
     </div>
 </div>
+
+<script type="text/javascript">
+	$(document).ready(function() {
+		createPstSelector();
+	});
+</script>
 
 </body>
 </html>

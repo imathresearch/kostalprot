@@ -18,7 +18,7 @@ textarea {
 .panel {
 	height: 100%;
 	float:left;
-	overflow:hidden;	
+	overflow:hidden;
 }
 
 .content {
@@ -34,5 +34,5 @@ textarea {
 #main_panel {
 	width:60%;
 	padding-left: 20px;
-	
+	overflow-y: auto;
 }

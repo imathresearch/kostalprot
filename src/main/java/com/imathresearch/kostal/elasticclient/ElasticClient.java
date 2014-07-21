@@ -20,10 +20,13 @@
 package com.imathresearch.kostal.elasticclient;
 
 import com.imathresearch.kostal.readers.PstReader;
+import com.pff.PSTException;
 import com.pff.PSTFile;
 import com.pff.PSTFolder;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
@@ -44,6 +47,8 @@ import java.util.Map;
 
 import javax.ws.rs.core.Response;
 
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 //import org.apache.log4j.Logger;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.common.xcontent.XContentFactory;
@@ -59,28 +64,31 @@ import static org.junit.Assert.fail;
 public class ElasticClient {
 //    private static Logger logger = Logger.getLogger(ElasticClient.class);
     
-    private static PstReader reader;
+//    private static PstReader reader;
     private static String urlBase = "http://localhost:8080/kostal/node";
     private static String conAu = "a29zdGFsOi5rMHN0NGwhUHIwdA==";
     
     
     public static void main (String[] args) throws ElasticsearchException, IOException
     {
-        
-        Map<String, List<Map<String, Object>>> contentList = ElasticClient.getFolderContent();
-        
-        try {
-            for (String folderName : contentList.keySet()) {
-                for (Map<String, Object> map : contentList.get(folderName)) {
-                    sendRequest("POST", "Obra", "pretty", new JSONObject(map).toString());
-                }
-            }
+        List<File> fileList = availablePst(PstReader.pathName);
+        for (File file : fileList) {
+            Map<String, List<Map<String, Object>>> contentList = ElasticClient.getFolderContent(file.getName());
             
-        } catch (Exception e) {
-            e.printStackTrace();
+            try {
+                for (String folderName : contentList.keySet()) {
+                    for (Map<String, Object> map : contentList.get(folderName)) {
+                        String fileWoutExt = FilenameUtils.removeExtension(file.getName());
+                        sendRequest("POST",fileWoutExt, "pretty", new JSONObject(map).toString());
+                    }
+                }
+                
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
-        
     }
+    
     
     private static Response esConnection(String method, URL urlObj, String payload) throws IOException, URISyntaxException {
         
@@ -132,6 +140,16 @@ public class ElasticClient {
         
         return esConnection(method, new URL(url), payload);
         
+    }
+    
+    public static List<File> availablePst(String path) {
+        File dir = new File(path);
+        String[] extensions = new String[] { "pst", "PST" };
+        List<File> files = (List<File>) FileUtils.listFiles(dir, extensions, true);
+        for (File file : files) {
+                System.out.println("file: " + file.getName());
+        }
+        return files;
     }
     
     public static JSONArray retrieveThread(String threadIndex, String topic) throws Exception {
@@ -240,24 +258,24 @@ public class ElasticClient {
         return sortedMap;
     }
     
-    private static void loadPstFiles() {
-        try {
-            reader = new PstReader("Obra.pst");
-            
-            assertTrue(reader.getFile().exists());
-            assertNotNull(reader.getPstFile());
-            
-        } catch (Exception e) {
-            fail(e.getMessage());
-        }
-    }
+//    private static PstReader loadPstFiles(String fileName) throws FileNotFoundException, PSTException, IOException {
+////        try {
+////            PstReader reader = new PstReader(fileName);
+//            
+////            assertTrue(reader.getFile().exists());
+////            assertNotNull(reader.getPstFile());
+////            
+////        } catch (Exception e) {
+////            fail(e.getMessage());
+////        }
+//        return reader;
+//    }
     
-    private static Map<String, List<Map<String, Object>>> getFolderContent() {
-        loadPstFiles();
-        PSTFile pstFile = reader.getPstFile();
-        assertNotNull(pstFile);
-        
+    private static Map<String, List<Map<String, Object>>> getFolderContent(String fileName) {
         try {
+//            PstReader reader = loadPstFiles(fileName);
+            PstReader reader = new PstReader(fileName);
+            PSTFile pstFile = reader.getPstFile();
             pstFile.getRootFolder().getContentCount();
             PSTFolder root = pstFile.getRootFolder();
             return reader.getFolderContent(root);
@@ -319,6 +337,27 @@ public class ElasticClient {
         
         JSONArray jsonThreaded = retrieveThread(threadIndex, topic);
         return jsonThreaded;
+    }
+    
+    public static List<String> esIndexMappings() {
+        Response resp = null; 
+        try {
+           resp = sendRequest("GET", "_mapping", "", null);
+        } catch (Exception e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        JSONObject entityJson = new JSONObject(resp.getEntity().toString());
+        JSONObject mappingsJson = entityJson.getJSONObject("pst").getJSONObject("mappings");
+        
+        List<String> typeList = new ArrayList<String>();
+        Iterator keys = mappingsJson.keys();
+        while (keys.hasNext()) {
+            String type = keys.next().toString();
+            typeList.add(type);
+        } 
+        
+        return typeList;
     }
     
 }
