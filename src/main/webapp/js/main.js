@@ -4,6 +4,9 @@ function doSearch() {
 	pst = $('#pst').val();
 	query = $('#query').val();
 	
+	$('#results').html("");
+	$("#spinner").show();
+	
 	url = '/kostal/rest/search';
 	if (pst != 'all') {
 		url = url + '/' + pst;
@@ -18,55 +21,56 @@ function doSearch() {
 		for (var i=0; i < result.length; i++) {
 			console.log(result[i]);
 			console.log(result[i]['_thrds']);
-			if (result[i]['_thrds'].length == 0) break;
+			if (result[i]['_thrds'].length != 0) {
 			
-			html = html.concat("<div>");
-			html = html.concat("<span style='color:gray' ><i>Folder name: </i></span><b>" + result[i]['name'] + "</b><br/> ");
-			html = html.concat("<span style='color:gray' ><i>Number of Messages: </i></span><b>" + result[i]['messNum'] + "</b> | ");
-			html = html.concat("<span style='color:gray' ><i>Size of folder: </i></span><b>" + getSpaceSize(result[i]['messSize']) + "</b><br/>");
-			html = html.concat("<span style='color:gray' ><i>Number of Threads: </i></span><b>" + result[i]['thrdNum'] + "</b> | ") ;
-			html = html.concat("<span style='color:gray' ><i>Size of Threads (avg): </i></span><b>" + getSpaceSize(result[i]['thrdSizeMean']) + "</b> | ") ;
-			html = html.concat("<span style='color:gray' ><i>Conversation time (avg): </i></span><b>" + getDuration(result[i]['thrdTimeMean']).toString() + "</b><br/><br/>") ;
-			
-//			console.log(result[i]['name']);
-//			console.log(result[i]['messNum']);
-//			console.log(result[i]['messSize']);
-//			console.log(result[i]['thrdSizeMean']);
-//			console.log(result[i]['thrdNum']);
-//			console.log(result[i]['thrdTimeMean']);
-//			console.log(result[i]['_thrds'].length);
-			html = html.concat("</div>");
-
-			html = html.concat("<div>");
-			html = html.concat("<table>");
-			html = html.concat("<th>");
-//			html = html.concat("<td>" + "Topic" + "</td>");
-			html = html.concat("<td><b>" + "Number of messages" + "</b></td>");
-			html = html.concat("<td><b>" + "Size of Thread" + "</b></td>");
-			html = html.concat("<td><b>" + "Conversation time" + "</b></td>");
-			html = html.concat("</th>");
-			for (var j=0; j < result[i]['_thrds'].length; j++) {
-//				console.log(result[i]['_thrds'][j]['topic']);
-//				console.log(result[i]['_thrds'][j]['messNum']);
-//				console.log(result[i]['_thrds'][j]['thrdSize']);
-//				console.log(result[i]['_thrds'][j]['thrdTime']);
-
-				html = html.concat("<tr>");
-				html = html.concat("<td>" + result[i]['_thrds'][j]['topic'] + "</td>");
-				html = html.concat("<td>" + result[i]['_thrds'][j]['messNum'] + "</td>");
-				html = html.concat("<td>" + getSpaceSize(result[i]['_thrds'][j]['thrdSize']) + "</td>");
-				html = html.concat("<td>" + getDuration(result[i]['_thrds'][j]['thrdTime']) + "</td>");
-				html = html.concat("</tr>");
+				html = html.concat("<div>");
+				html = html.concat("<span style='color:gray' ><i>Folder name: </i></span><b>" + result[i]['name'] + "</b><br/> ");
+				html = html.concat("<span style='color:gray' ><i>Number of Messages: </i></span><b>" + result[i]['messNum'] + "</b> | ");
+				html = html.concat("<span style='color:gray' ><i>Size of folder: </i></span><b>" + getSpaceSize(result[i]['messSize']) + "</b><br/>");
+				html = html.concat("<span style='color:gray' ><i>Number of Threads: </i></span><b>" + result[i]['thrdNum'] + "</b> | ") ;
+				html = html.concat("<span style='color:gray' ><i>Size of Threads (avg): </i></span><b>" + getSpaceSize(result[i]['thrdSizeMean']) + "</b> | ") ;
+				html = html.concat("<span style='color:gray' ><i>Conversation time (avg): </i></span><b>" + getDuration(result[i]['thrdTimeMean']).toString() + "</b><br/><br/>") ;
+				
+	//			console.log(result[i]['name']);
+	//			console.log(result[i]['messNum']);
+	//			console.log(result[i]['messSize']);
+	//			console.log(result[i]['thrdSizeMean']);
+	//			console.log(result[i]['thrdNum']);
+	//			console.log(result[i]['thrdTimeMean']);
+	//			console.log(result[i]['_thrds'].length);
+				html = html.concat("</div>");
+	
+				html = html.concat("<div>");
+				html = html.concat("<table>");
+				html = html.concat("<th>");
+	//			html = html.concat("<td>" + "Topic" + "</td>");
+				html = html.concat("<td><b>" + "Number of messages" + "</b></td>");
+				html = html.concat("<td><b>" + "Size of Thread" + "</b></td>");
+				html = html.concat("<td><b>" + "Conversation time" + "</b></td>");
+				html = html.concat("</th>");
+				for (var j=0; j < result[i]['_thrds'].length; j++) {
+	//				console.log(result[i]['_thrds'][j]['topic']);
+	//				console.log(result[i]['_thrds'][j]['messNum']);
+	//				console.log(result[i]['_thrds'][j]['thrdSize']);
+	//				console.log(result[i]['_thrds'][j]['thrdTime']);
+	
+					html = html.concat("<tr>");
+					html = html.concat("<td>" + result[i]['_thrds'][j]['topic'] + "</td>");
+					html = html.concat("<td>" + result[i]['_thrds'][j]['messNum'] + "</td>");
+					html = html.concat("<td>" + getSpaceSize(result[i]['_thrds'][j]['thrdSize']) + "</td>");
+					html = html.concat("<td>" + getDuration(result[i]['_thrds'][j]['thrdTime']) + "</td>");
+					html = html.concat("</tr>");
+				}
+				html = html.concat("</table>");
+				html = html.concat("</div>");
+				html = html.concat("</br><hr size='0.5' noshade></br>");
 			}
-			html = html.concat("</table>");
-			html = html.concat("</div>");
-			html = html.concat("</br><hr size='0.5' noshade></br>");
 		}
 		
 		html = html.concat("</br></br>");
+		$("#spinner").hide();
 		$('#results').html(html);
 	});
-	
 	return true;
 };
 
@@ -99,9 +103,10 @@ function getDuration(timeMillis){
 
 function getSpaceSize(size){
     var units = [
-        {label:"KiB",    mod:1024,},
-        {label:"MiB",   mod:1024,},
-        {label:"GiB",   mod:1024,},
+        {label:"bytes", mod:1024,},
+        {label:"KiB", mod:1024,},
+        {label:"MiB", mod:1024,},
+        {label:"GiB", mod:1024,},
     ];
     var spaceSize = new Object();
     var x = size;

@@ -1,1 +1,2 @@
 cluster.name: my_cluster
+index.number_of_shards: 10

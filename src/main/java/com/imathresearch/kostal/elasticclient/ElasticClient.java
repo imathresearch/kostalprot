@@ -159,15 +159,16 @@ public class ElasticClient {
         String query = "";
         String payload = "";
         if (emptyField.equals(threadIndex)) {
-            query = "threadTopic:\"" + topic + "\" OR conversationTopic:\"" + topic + "\"";
+            query = "conversationTopic:\"" + topic + "\"";
             payload = searchPayload(query);
+//            return jsonArray;
         } else {
-            query = "threadIndex:" + threadIndex.substring(0, 15) + "*";
+            query = "threadIndex:" + threadIndex.substring(0, 15).replace("/", "\\/") + "*";
             payload = searchPayload(query);
         }
 
         pstName = (pstName == null) ? "" : pstName;
-        Response resp = sendRequest("GET", pstName + "/_search", "", payload);
+        Response resp = sendRequest("GET", pstName + "/_search", "size=1000", payload);
         
         JSONObject jsonEntity = new JSONObject(resp.getEntity().toString());
         
@@ -205,17 +206,17 @@ public class ElasticClient {
     }
     
     public static String searchPayload(String query) {
-        String sortQuery = "";
+//        String sortQuery = "";
         String contentQuery = "";
         String payload = "";
         try {
-            sortQuery = XContentFactory.jsonBuilder()
-                    .startObject()
-                    .startObject("clientSubmitTime")
-                    .field("order", "asc")
-                    .endObject()
-                    .endObject()
-                    .string();
+//            sortQuery = XContentFactory.jsonBuilder()
+//                    .startObject()
+//                    .startObject("clientSubmitTime")
+//                    .field("order", "asc")
+//                    .endObject()
+//                    .endObject()
+//                    .string();
             
           contentQuery = XContentFactory.jsonBuilder()
                       .startObject()
@@ -224,12 +225,11 @@ public class ElasticClient {
                               .endObject()
                       .endObject()
                       .string();
-            
           JSONObject payload2 = new JSONObject();
           //payload2.put("sort", new JSONObject(sortQuery));
           payload2.put("query", new JSONObject(contentQuery));
           payload = payload2.toString();
-          
+//          System.out.println(">>>>>>>" + payload);
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -290,7 +290,8 @@ public class ElasticClient {
     
     public static List<JSONArray> retrieveResultsThreaded(JSONArray json) throws Exception {
         List<JSONArray> jsonThreadedList = new ArrayList<JSONArray>();
-        List<String> alreadyRetrievedIds = new ArrayList<String>(); 
+        List<String> alreadyRetrievedIds = new ArrayList<String>();
+//        System.out.println(">>>> JSON LENGTH: " + json.length());
         for (int i = 0; i < json.length(); i++) {
             JSONArray jsonArray = retrieveResultsThreaded(json.getJSONObject(i));
             List<String> notUsedIds = notUsedIds(jsonArray, alreadyRetrievedIds);
@@ -304,10 +305,14 @@ public class ElasticClient {
                     }
                 }
             }
+            
             if (!"[]".equals(filteredArray.toString()))
+            {
                 jsonThreadedList.add(filteredArray);
+            }
+            
             alreadyRetrievedIds.addAll(notUsedIds);
-            System.out.println("_IDS>>>" + alreadyRetrievedIds);
+//            System.out.println(">>> _IDS: " + alreadyRetrievedIds);
         }
         return jsonThreadedList;
     }
@@ -336,7 +341,7 @@ public class ElasticClient {
         } else {
             topic = jsonSource.getString("threadTopic");
         }
-        
+        topic = topic.replace("\"","\\\"");
         JSONArray jsonThreaded = retrieveThread(threadIndex, topic, jsonEntity.getString("_type"));
         return jsonThreaded;
     }
@@ -369,7 +374,7 @@ public class ElasticClient {
             List<JSONArray> jsonThreadedList = ElasticClient.retrieveResultsThreaded(jsonArray);
 //            System.out.println(">>>" + jsonThreadedList.toString());
             JSONArray jsonThreadsFormated = threadsFormatedOnPst(jsonThreadedList);
-            System.out.println(">>>" + jsonThreadsFormated.toString());
+//            System.out.println(">>>" + jsonThreadsFormated.toString());
             resp = Response
                     .status(resp.getStatus())
                     .entity(jsonThreadsFormated.toString())
@@ -420,17 +425,17 @@ public class ElasticClient {
                 thrdSize = thrdSize + messSize;
                 
 //                List<JSONObject> thrList = pstMap.get(pstName);
-                System.out.println(">>>" + i);
-                System.out.println(">>>" + messTime);
+//                System.out.println(">>>" + i);
+//                System.out.println(">>>" + messTime);
                 if (i == 0) {
                     firstMess = messTime;
                     lastMess = messTime;
                 } else {
                     lastMess = messTime;
                 }
-                System.out.println(">>>" + firstMess);
-                System.out.println(">>>" + lastMess);
-                System.out.println(">>>----");
+//                System.out.println(">>>" + firstMess);
+//                System.out.println(">>>" + lastMess);
+//                System.out.println(">>>----");
                 
 //                JSONArray thrArray = thrMap.get(intId);
                 
@@ -444,9 +449,9 @@ public class ElasticClient {
                 SimpleDateFormat dateFormat = new SimpleDateFormat("EEE MMM d HH:mm:ss z yyyy");
                 Date firstDate = dateFormat.parse(firstMess);
                 Date lastDate = dateFormat.parse(lastMess);
-                System.out.println(">>>" + firstDate);
-                System.out.println(">>>" + lastDate);
-                System.out.println(">>>------------");
+//                System.out.println(">>>" + firstDate);
+//                System.out.println(">>>" + lastDate);
+//                System.out.println(">>>------------");
                 thrdsBuilder.field("thrdTime", lastDate.getTime() - firstDate.getTime());
             } catch (Exception e) {
                 e.printStackTrace();
@@ -455,7 +460,7 @@ public class ElasticClient {
             String thrdsString = thrdsBuilder.string();
             pstMap.get(pstName).add(new JSONObject(thrdsString));
         }
-        System.out.println(">>>" + pstMap);
+//        System.out.println(">>>" + pstMap);
         
         XContentBuilder pstContent = XContentFactory.jsonBuilder();
 //        pstContent.startObject();

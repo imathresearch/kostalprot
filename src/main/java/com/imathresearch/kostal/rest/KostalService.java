@@ -64,7 +64,7 @@ public class KostalService {
             resp = ElasticClient.sendRequest(
                     "GET", 
                     "Obra/" + id, 
-                    "",
+                    "size=1000",
                     null);
             
             if (threaded) {
@@ -94,7 +94,7 @@ public class KostalService {
         Response resp = null;
         try {
             String payload = ElasticClient.searchPayload(query);
-            resp = ElasticClient.sendRequest("GET", "_search", "" , payload);
+            resp = ElasticClient.sendRequest("GET", "_search", "size=1000" , payload);
             resp = ElasticClient.formatResults(resp,threaded);
             
 //            JSONObject jsonEntity = new JSONObject(resp.getEntity().toString());
@@ -125,7 +125,8 @@ public class KostalService {
         Response resp = null;
         try {
             String payload = ElasticClient.searchPayload(query);
-            resp = ElasticClient.sendRequest("GET", pst + "/_search", "" , payload);
+            resp = ElasticClient.sendRequest("GET", pst + "/_search", "size=1000" , payload);
+//            System.out.println(">>>> CHURRACO: " + resp.getEntity().toString());
             resp = ElasticClient.formatResults(resp,threaded);
         } catch (Exception e) {
             // TODO Auto-generated catch block
