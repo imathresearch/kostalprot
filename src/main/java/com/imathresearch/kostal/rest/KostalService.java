@@ -95,16 +95,17 @@ public class KostalService {
         try {
             String payload = ElasticClient.searchPayload(query);
             resp = ElasticClient.sendRequest("GET", "_search", "" , payload);
+            resp = ElasticClient.formatResults(resp,threaded);
             
-            JSONObject jsonEntity = new JSONObject(resp.getEntity().toString());
-            JSONArray jsonArray = jsonEntity.getJSONObject("hits").getJSONArray("hits");
-            if (threaded) {
-                List<JSONArray> jsonThreadedList = ElasticClient.retrieveResultsThreaded(jsonArray);
-                resp = Response
-                        .status(resp.getStatus())
-                        .entity(jsonThreadedList.toString())
-                        .build();
-            }
+//            JSONObject jsonEntity = new JSONObject(resp.getEntity().toString());
+//            JSONArray jsonArray = jsonEntity.getJSONObject("hits").getJSONArray("hits");
+//            if (threaded) {
+//                List<JSONArray> jsonThreadedList = ElasticClient.retrieveResultsThreaded(jsonArray);
+//                resp = Response
+//                        .status(resp.getStatus())
+//                        .entity(jsonThreadedList.toString())
+//                        .build();
+//            }
         } catch (Exception e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -125,16 +126,7 @@ public class KostalService {
         try {
             String payload = ElasticClient.searchPayload(query);
             resp = ElasticClient.sendRequest("GET", pst + "/_search", "" , payload);
-            
-            JSONObject jsonEntity = new JSONObject(resp.getEntity().toString());
-            JSONArray jsonArray = jsonEntity.getJSONObject("hits").getJSONArray("hits");
-            if (threaded) {
-                List<JSONArray> jsonThreadedList = ElasticClient.retrieveResultsThreaded(jsonArray);
-                resp = Response
-                        .status(resp.getStatus())
-                        .entity(jsonThreadedList.toString())
-                        .build();
-            }
+            resp = ElasticClient.formatResults(resp,threaded);
         } catch (Exception e) {
             // TODO Auto-generated catch block
             e.printStackTrace();

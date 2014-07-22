@@ -51,6 +51,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 //import org.apache.log4j.Logger;
 import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 
 import org.json.JSONArray;
@@ -152,7 +153,7 @@ public class ElasticClient {
         return files;
     }
     
-    public static JSONArray retrieveThread(String threadIndex, String topic) throws Exception {
+    public static JSONArray retrieveThread(String threadIndex, String topic, String pstName) throws Exception {
         
         JSONArray jsonArray = new JSONArray();
         String query = "";
@@ -165,7 +166,8 @@ public class ElasticClient {
             payload = searchPayload(query);
         }
 
-        Response resp = sendRequest("GET", "_search", "", payload);
+        pstName = (pstName == null) ? "" : pstName;
+        Response resp = sendRequest("GET", pstName + "/_search", "", payload);
         
         JSONObject jsonEntity = new JSONObject(resp.getEntity().toString());
         
@@ -325,7 +327,7 @@ public class ElasticClient {
     public static JSONArray retrieveResultsThreaded(JSONObject json) throws Exception {
         JSONObject jsonEntity = new JSONObject(json.toString());
  
-        JSONObject jsonSource = jsonEntity.getJSONObject("_source");//("Source");
+        JSONObject jsonSource = jsonEntity.getJSONObject("_source");
         String threadIndex = jsonSource.getString("threadIndex");
         
         String topic = null;
@@ -335,7 +337,7 @@ public class ElasticClient {
             topic = jsonSource.getString("threadTopic");
         }
         
-        JSONArray jsonThreaded = retrieveThread(threadIndex, topic);
+        JSONArray jsonThreaded = retrieveThread(threadIndex, topic, jsonEntity.getString("_type"));
         return jsonThreaded;
     }
     
@@ -358,6 +360,136 @@ public class ElasticClient {
         } 
         
         return typeList;
+    }
+    
+    public static Response formatResults(Response resp, boolean threaded) throws Exception {
+        JSONObject jsonEntity = new JSONObject(resp.getEntity().toString());
+        JSONArray jsonArray = jsonEntity.getJSONObject("hits").getJSONArray("hits");
+        if (threaded) {
+            List<JSONArray> jsonThreadedList = ElasticClient.retrieveResultsThreaded(jsonArray);
+//            System.out.println(">>>" + jsonThreadedList.toString());
+            JSONArray jsonThreadsFormated = threadsFormatedOnPst(jsonThreadedList);
+            System.out.println(">>>" + jsonThreadsFormated.toString());
+            resp = Response
+                    .status(resp.getStatus())
+                    .entity(jsonThreadsFormated.toString())
+                    .build();
+        }
+        
+        return resp;
+    }
+
+
+    private static JSONArray threadsFormatedOnPst(List<JSONArray> jsonThreadedList) throws IOException {
+        
+        List<String> pstList = esIndexMappings();
+        Map<String, List<JSONObject>> pstMap = new HashMap<String, List<JSONObject>>();
+        // Initialization of a map structure
+        for (String pstName : pstList) {
+            pstMap.put(pstName, new ArrayList<JSONObject>());
+        }
+        
+        // Walk through the thread list
+        XContentBuilder thrdsBuilder = XContentFactory.jsonBuilder();
+        
+        for (JSONArray thread : jsonThreadedList) { // Look into all THREADS
+            String pstName = "";
+            
+            long thrdAttSize = 0;
+            long thrdSize = 0;
+           
+            String messTopic = "";
+            
+            String firstMess = "";
+            String lastMess = "";
+            thrdsBuilder = XContentFactory.jsonBuilder();
+            thrdsBuilder.startObject();
+            for (int i = 0; i < thread.length(); i++) { // Look into MESSEAGES
+                JSONObject mess = thread.getJSONObject(i);
+                
+                pstName = mess.getString("_type");
+                JSONObject jsonSource = mess.getJSONObject("_source");
+                
+                messTopic = jsonSource.getString("conversationTopic");
+                String messTopic2 = jsonSource.getString("threadTopic");
+                Long messAttSize = jsonSource.getLong("attachmentSize");
+                Long messSize = jsonSource.getLong("messageSize");
+                String messTime = jsonSource.getString("clientSubmitTime");
+                
+                thrdAttSize = thrdAttSize + messAttSize;
+                thrdSize = thrdSize + messSize;
+                
+//                List<JSONObject> thrList = pstMap.get(pstName);
+                System.out.println(">>>" + i);
+                System.out.println(">>>" + messTime);
+                if (i == 0) {
+                    firstMess = messTime;
+                    lastMess = messTime;
+                } else {
+                    lastMess = messTime;
+                }
+                System.out.println(">>>" + firstMess);
+                System.out.println(">>>" + lastMess);
+                System.out.println(">>>----");
+                
+//                JSONArray thrArray = thrMap.get(intId);
+                
+            }
+            
+            thrdsBuilder.field("topic", messTopic);
+            thrdsBuilder.field("messNum", thread.length());
+            thrdsBuilder.field("thrdSize", thrdSize);
+            thrdsBuilder.field("thrdAttSize", thrdAttSize);
+            try {
+                SimpleDateFormat dateFormat = new SimpleDateFormat("EEE MMM d HH:mm:ss z yyyy");
+                Date firstDate = dateFormat.parse(firstMess);
+                Date lastDate = dateFormat.parse(lastMess);
+                System.out.println(">>>" + firstDate);
+                System.out.println(">>>" + lastDate);
+                System.out.println(">>>------------");
+                thrdsBuilder.field("thrdTime", lastDate.getTime() - firstDate.getTime());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            thrdsBuilder.endObject();
+            String thrdsString = thrdsBuilder.string();
+            pstMap.get(pstName).add(new JSONObject(thrdsString));
+        }
+        System.out.println(">>>" + pstMap);
+        
+        XContentBuilder pstContent = XContentFactory.jsonBuilder();
+//        pstContent.startObject();
+        pstContent.startArray();//"_psts");
+        for (String pstName : pstList) {
+            pstContent.startObject();
+            pstContent.field("name", pstName);
+            pstContent.rawField("_thrds",pstMap.get(pstName).toString().getBytes());
+            int messNum = 0;
+            long messSize = 0;
+            double thrdTime = 0;
+            List<JSONObject> jsonThrdList = pstMap.get(pstName);
+            if (!jsonThrdList.isEmpty()) {
+                for (JSONObject thrd : jsonThrdList) {
+                    messNum = messNum + thrd.getInt("messNum");
+                    messSize = messSize + thrd.getLong("thrdSize");
+                    thrdTime = thrdTime + thrd.getLong("thrdTime");
+                }
+                int thrdNum = jsonThrdList.size();
+                double thrdSizeMean = messSize / thrdNum;
+                double thrdTimeMean = thrdTime / thrdNum;
+                pstContent.field("messNum", messNum);
+                pstContent.field("messSize", messSize);
+                pstContent.field("thrdNum", thrdNum);
+                pstContent.field("thrdSizeMean", thrdSizeMean);
+                pstContent.field("thrdTimeMean", thrdTimeMean);
+            }
+            pstContent.endObject();
+        }
+        pstContent.endArray();
+//        pstContent.endObject();
+
+        
+        return new JSONArray(pstContent.string());
     }
     
 }
